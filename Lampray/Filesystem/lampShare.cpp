@@ -271,7 +271,7 @@ void Lamp::Core::FS::lampShare::importProfile() {
         Lamp::Core::lampControl::getInstance().deplopmentTracker = {7,11};
         bit7z::BitArchiveReader reader{lib, "import/lampPackage", bit7z::BitFormat::SevenZip};
         reader.test();
-        reader.extract(Lamp::Core::lampConfig::getInstance().archiveDataPath +
+        reader.extractTo(Lamp::Core::lampConfig::getInstance().archiveDataPath +
                        Lamp::Games::getInstance().currentGame->Ident().ReadableName + "/");
         Lamp::Core::lampControl::getInstance().deplopmentTracker = {8,11};
         std::vector<Base::lampMod::Mod *> newList;
@@ -369,7 +369,7 @@ void Lamp::Core::FS::lampShare::exportProfile(std::string profileNameS) {
         InsertXMLintoFile( profileName + ".lampProfile", root);
 
         Lamp::Core::lampControl::getInstance().inDeployment = false;
-        Lamp::Core::Base::lampLog::getInstance().log("Profile Exported: " + absolute(fs::path( profileName + ".lampProfile")).string(),Base::lampLog::LOG,true);
+        Lamp::Core::Base::lampLog::getInstance().log("Profile Exported: " + absolute(std::filesystem::path( profileName + ".lampProfile")).string(),Base::lampLog::LOG,true);
     }catch(std::exception e){
 
     }
