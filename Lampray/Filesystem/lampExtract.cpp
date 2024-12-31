@@ -4,10 +4,10 @@
 
 #include <regex>
 #include "lampFS.h"
-#include "bit7zlibrary.hpp"
+#include "bit7z/bit7zlibrary.hpp"
 #include "../Control/lampGames.h"
-#include "bitarchivereader.hpp"
-#include "bitexception.hpp"
+#include "bit7z/bitarchivereader.hpp"
+#include "bit7z/bitexception.hpp"
 
 Lamp::Core::FS::lampReturn Lamp::Core::FS::lampExtract::extract(const Base::lampMod::Mod *mod) {
     if(!mod->enabled) return false;

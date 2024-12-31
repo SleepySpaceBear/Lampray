@@ -8,9 +8,9 @@
 #include "../../third-party/nfd/include/nfd.h"
 
 #include "../Control/lampGames.h"
-#include "bit7zlibrary.hpp"
-#include "bitfilecompressor.hpp"
-#include "bitarchivereader.hpp"
+#include "bit7z/bit7zlibrary.hpp"
+#include "bit7z/bitfilecompressor.hpp"
+#include "bit7z/bitarchivereader.hpp"
 #include "../Control/lampControl.h"
 
 bool Lamp::Core::FS::lampShare::compressFile(const std::string& inputFile, const std::string& outputFile) {
