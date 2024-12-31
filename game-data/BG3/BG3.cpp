@@ -407,6 +407,8 @@ Lamp::Game::lampReturn Lamp::Game::BG3::deployment() {
         };
         Lamp::Core::FS::lampTrack::handleFile(E);
     Lamp::Core::lampControl::getInstance().deplopmentTracker = {4,4};
+  // TODO: Fix this return 
+  return true;
 }
 
 Lamp::Game::lampReturn Lamp::Game::BG3::postDeploymentTasks() {
