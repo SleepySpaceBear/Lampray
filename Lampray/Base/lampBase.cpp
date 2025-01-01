@@ -74,7 +74,6 @@ bool Lamp::Core::Base::FileSystemOverlay::build() {
 }
 
 bool Lamp::Core::Base::FileSystemOverlay::remove() {
-  printf("remove called!\n");
   if (!isActive) {
     return true;
   }
