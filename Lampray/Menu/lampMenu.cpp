@@ -1,6 +1,7 @@
 //
 // Created by charles on 27/09/23.
 #include <cstdlib>
+#include <stdexcept>
 #include "lampMenu.h"
 #include "lampCustomise.h"
 #include "../Lang/lampLang.h"
@@ -113,12 +114,9 @@ void Lamp::Core::lampMenu::ModMenu() {
     off = (avail - size) * 0.5f;
     if (off > 0.0f){ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);}
     if(ImGui::Button(lampLang::LS("LAMPRAY_RESET"))) {
+        // Lamp::Games::getInstance().currentGame->unmount();
         Lamp::Core::FS::lampTrack::reset(Lamp::Games::getInstance().currentGame->Ident().ReadableName);
-        std::filesystem::path installPath(Lamp::Games::getInstance().currentGame->KeyInfo()["installDirPath"]);
-        system(("pkexec umount \""+Lamp::Games::getInstance().currentGame->KeyInfo()["installDirPath"]+"\"").c_str());
-        std::filesystem::rename(installPath.parent_path() / ("Lampray Managed - " + installPath.stem().string()), Lamp::Games::getInstance().currentGame->KeyInfo()["installDirPath"]);
-        system(("pkexec umount \""+Lamp::Games::getInstance().currentGame->KeyInfo()["appDataPath"]+"/Mods\"").c_str());
-        std::filesystem::rename(std::filesystem::path(Lamp::Games::getInstance().currentGame->KeyInfo()["appDataPath"]+"/Mods").parent_path() / ("Lampray Managed - " + std::filesystem::path(Lamp::Games::getInstance().currentGame->KeyInfo()["appDataPath"]+"/Mods").stem().string()), std::filesystem::path(Lamp::Games::getInstance().currentGame->KeyInfo()["appDataPath"]+"/Mods"));
+        Lamp::Games::getInstance().currentGame->unmount();
     }
 
 

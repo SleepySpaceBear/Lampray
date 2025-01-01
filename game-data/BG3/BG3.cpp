@@ -3,6 +3,7 @@
 //
 
 #include <filesystem>
+#include <memory>
 #include <regex>
 #include "BG3.h"
 #include "../../Lampray/Control/lampControl.h"
@@ -95,7 +96,7 @@ Lamp::Game::lampReturn Lamp::Game::BG3::startDeployment() {
 
     Core::Base::LampSequencer::run("BG3 Deployment Queue");
     Lamp::Core::lampControl::getInstance().inDeployment = false;
-    return false;
+    return true;
 }
 
 Lamp::Game::lampReturn Lamp::Game::BG3::preCleanUp() {
@@ -116,7 +117,8 @@ Lamp::Game::lampReturn Lamp::Game::BG3::preCleanUp() {
                 std::filesystem::remove_all(entry.path());
             }
         }
-    }catch(std::exception e){
+    }catch(const std::exception& e){
+        printf("%s", e.what());
         return {-1, "Cannot clean working directories"};
     }
 
@@ -233,50 +235,7 @@ Lamp::Game::lampReturn Lamp::Game::BG3::preCleanUp() {
 
     Lamp::Core::lampControl::getInstance().deplopmentTracker.first = 6;
 
-    std::filesystem::path installPath(keyInfo["installDirPath"]);
-    if (std::filesystem::exists(installPath) && std::filesystem::is_directory(installPath) &&
-            std::filesystem::exists(installPath.parent_path() / ("Lampray Managed - " + installPath.stem().string())) &&
-            std::filesystem::is_directory(installPath.parent_path() / ("Lampray Managed - " + installPath.stem().string()))) {
-        if(std::filesystem::is_empty(installPath)){
-            system(("pkexec umount \""+Lamp::Games::getInstance().currentGame->KeyInfo()["installDirPath"]+"\"").c_str());
-            try {
-                std::filesystem::rename(
-                        installPath.parent_path() / ("Lampray Managed - " + installPath.stem().string()),
-                        keyInfo["installDirPath"]);
-            } catch (std::exception ex) {
-
-            }
-
-            skipMount = false;
-        } else {
-            skipMount = true;
-        }
-    }
     
-    std::filesystem::path appPath(keyInfo["appDataPath"]);
-    std::filesystem::path tempAppPath(appPath.parent_path() / ("Lampray Managed - " + appPath.stem().string()));
-    
-    if(std::filesystem::exists(appPath) && std::filesystem::is_directory(appPath)
-        && std::filesystem::exists(tempAppPath) && std::filesystem::is_directory(tempAppPath)) {
-        
-        if(std::filesystem::is_empty(std::filesystem::path(KeyInfo()["appDataPath"]+"/Mods"))){
-            system(("pkexec umount \""+Lamp::Games::getInstance().currentGame->KeyInfo()["appDataPath"]+"/Mods\"").c_str());
-            try {
-                std::filesystem::rename(tempAppPath / "Mods",
-                                        appPath / "Mods");
-            } catch (std::exception ex) {
-
-            }
-            skipMount = false;
-        } else {
-          skipMount = true;
-        }
-    }
-
-//    std::string managedString = std::string("Lampray Managed - ") + gamePath.filename().string();
-//    std::filesystem::path MergedPath = gamePath.parent_path() / managedString;
-//    std::filesystem::rename(gamePath, MergedPath);
-//    std::filesystem::create_directories(gamePath);
 
     return {1, "PreCleanup Finished."};
 }
@@ -361,53 +320,38 @@ Lamp::Game::lampReturn Lamp::Game::BG3::preDeployment() {
 }
 
 Lamp::Game::lampReturn Lamp::Game::BG3::deployment() {
-    std::string workingDir = Lamp::Core::lampConfig::getInstance().DeploymentDataPath + Ident().ReadableName;
+    std::filesystem::path workingDir = Lamp::Core::lampConfig::getInstance().DeploymentDataPath 
+                                       + Ident().ReadableName;
     Lamp::Core::lampControl::getInstance().deplopmentTracker = {0,4};
 
-    if(!skipMount) {
-        Core::Base::OverlayBuilder *BG3Overlay = new Core::Base::OverlayBuilder;
-        std::filesystem::path SteamDataPath(workingDir + "/Steam");
-        std::filesystem::path SteamConfig(
-                Lamp::Core::lampConfig::getInstance().ConfigDataPath + Ident().ReadableName + "/STEAM/");
-        std::filesystem::path SteamWorkingDir(
-                Lamp::Core::lampConfig::getInstance().workingPaths + Ident().ReadableName + "/STEAM/");
+    std::filesystem::path workingSteamDataPath = workingDir / "Steam";
+    std::filesystem::path workingSteamModPath = workingDir / "Mods";
+    
+    std::filesystem::path steamDataPath = std::filesystem::absolute(keyInfo["installDirPath"]);
+    std::filesystem::path steamModPath = std::filesystem::absolute(keyInfo["appDataPath"]) / "Mods";
 
-        BG3Overlay->addPath(absolute(SteamDataPath));
-        lampReturn SteamReturn = BG3Overlay->create(std::filesystem::absolute(keyInfo["installDirPath"]),
-                                                    absolute(SteamConfig), absolute(SteamWorkingDir));
-        Core::Base::lampLog::getInstance().log(SteamReturn.returnReason, Core::Base::lampLog::warningLevel::WARNING,
-                                               false);
+    gameOverlay = std::make_unique<Lamp::Core::Base::FileSystemOverlay>(steamDataPath, 
+                                                                        workingSteamDataPath, 
+                                                                        true);
 
-        Lamp::Core::lampControl::getInstance().deplopmentTracker = {1,4};
-        Core::Base::OverlayBuilder *BG3OverlayMods = new Core::Base::OverlayBuilder;
-        std::filesystem::path ModsWorkingDir(
-                Lamp::Core::lampConfig::getInstance().workingPaths + Ident().ReadableName + "/MODS/");
-        std::filesystem::path ModsConfig(
-                Lamp::Core::lampConfig::getInstance().ConfigDataPath + Ident().ReadableName + "/MODS/");
-
-        std::filesystem::path ModsDataPath(workingDir + "/Mods");
-        BG3OverlayMods->addPath(absolute(ModsDataPath));
-        Lamp::Core::lampControl::getInstance().deplopmentTracker = {2,4};
-        Core::Base::lampLog::getInstance().log(
-                BG3OverlayMods->create(std::filesystem::absolute(KeyInfo()["appDataPath"] + "/Mods"),
-                                       absolute(ModsConfig), absolute(ModsWorkingDir)).returnReason,
-                Core::Base::lampLog::warningLevel::WARNING, false);
-
-    }
+    modOverlay = std::make_unique<Lamp::Core::Base::FileSystemOverlay>(steamModPath, 
+                                                                       workingSteamModPath,
+                                                                       true);
+    
 
     Core::Base::lampLog::getInstance().log("Copying ModProfile");
     Lamp::Core::lampControl::getInstance().deplopmentTracker = {3,4};
         Lamp::Core::FS::lampTrack::handleFileDescriptor E{
                 Lamp::Core::FS::lampTrack::handleFileDescriptor::operation::copyFolder,
                 Lamp::Core::FS::lampTrack::handleFileDescriptor::mode::updateExisting,
-                workingDir+"/PlayerProfiles",
+                workingDir / "PlayerProfiles",
                 KeyInfo()["appDataPath"]+"/PlayerProfiles/",
                 "",
                 Ident().ReadableName
         };
         Lamp::Core::FS::lampTrack::handleFile(E);
     Lamp::Core::lampControl::getInstance().deplopmentTracker = {4,4};
-  // TODO: Fix this return 
+
   return true;
 }
 

@@ -56,7 +56,7 @@ namespace Lamp::Game {
             ModList = Lamp::Core::FS::lampIO::loadModList(Ident().ShortHand, keyInfo["CurrentProfile"]);
         }
 
-        int SeparatorModType(){
+        int SeparatorModType() override {
             return MOD_SEPARATOR;
         }
 
@@ -68,24 +68,26 @@ namespace Lamp::Game {
             return ModTypeMap;
         }
 
-        void unmount() override{
-            std::filesystem::path installPath(KeyInfo()["installDirPath"]);
-            system(("pkexec umount \""+KeyInfo()["installDirPath"]+"\"").c_str());
-            std::filesystem::rename(installPath.parent_path() / ("Lampray Managed - " + installPath.stem().string()), KeyInfo()["installDirPath"]);
-            system(("pkexec umount \""+KeyInfo()["appDataPath"]+"/Mods\"").c_str());
-            std::filesystem::rename(std::filesystem::path(KeyInfo()["appDataPath"]+"/Mods").parent_path() / ("Lampray Managed - " + std::filesystem::path(KeyInfo()["appDataPath"]+"/Mods").stem().string()), std::filesystem::path(KeyInfo()["appDataPath"]+"/Mods"));
-        }
-
         bool installPathSet() override{
             if(this->KeyInfo()["installDirPath"] == "" || this->KeyInfo()["appDataPath"] == ""){
                 return false;
             }
             return true;
         }
+        
+        void unmount() override {
+          if(modOverlay) {
+            modOverlay->remove();
+          }
+
+          if(gameOverlay) {
+            gameOverlay->remove();
+          }
+        }
 
 	private:
-
-        bool skipMount = false;
+        std::unique_ptr<Lamp::Core::Base::FileSystemOverlay> modOverlay;
+        std::unique_ptr<Lamp::Core::Base::FileSystemOverlay> gameOverlay;
 
         enum ModType{
             BG3_ENGINE_INJECTION = 0,

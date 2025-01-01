@@ -21,6 +21,7 @@ add_executable(Lampray main.cpp
         third-party/l4z/lz4.c
         third-party/l4z/lz4.h
         Lampray/Base/lampBase.h
+        Lampray/Base/lampBase.cpp
         Lampray/Filesystem/lampFS.h
         Lampray/Control/lampControl.h
         Lampray/Control/lampControl.cpp
