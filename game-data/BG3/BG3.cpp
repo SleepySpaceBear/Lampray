@@ -131,7 +131,6 @@ Lamp::Game::lampReturn Lamp::Game::BG3::preCleanUp() {
         std::filesystem::create_directories(workingDir + "/Steam/Data");
         std::filesystem::create_directories(workingDir + "/Mods");
         std::filesystem::create_directories(workingDir + "/PlayerProfiles/Public");
-        std::filesystem::create_directories(workingDir + "/OverlayConfigLayer");
         std::filesystem::create_directories(workingDir + "/ext");
     }catch(std::exception e){
         return {-1, "Unable to create working directories."};
@@ -322,22 +321,36 @@ Lamp::Game::lampReturn Lamp::Game::BG3::preDeployment() {
 Lamp::Game::lampReturn Lamp::Game::BG3::deployment() {
     std::filesystem::path workingDir = Lamp::Core::lampConfig::getInstance().DeploymentDataPath 
                                        + Ident().ReadableName;
+    std::filesystem::path tempDir = Lamp::Core::lampConfig::getInstance().workingPaths;
     Lamp::Core::lampControl::getInstance().deplopmentTracker = {0,4};
 
-    std::filesystem::path workingSteamDataPath = workingDir / "Steam";
-    std::filesystem::path workingSteamModPath = workingDir / "Mods";
-    
-    std::filesystem::path steamDataPath = std::filesystem::absolute(keyInfo["installDirPath"]);
-    std::filesystem::path steamModPath = std::filesystem::absolute(keyInfo["appDataPath"]) / "Mods";
+    std::filesystem::path workingDataPath = workingDir / "Steam";
+    std::filesystem::path workingModPath = workingDir / "Mods";
+    std::filesystem::path workingProfilePath = workingDir / "PlayerProfiles";
 
-    gameOverlay = std::make_unique<Lamp::Core::Base::FileSystemOverlay>(steamDataPath, 
-                                                                        workingSteamDataPath, 
+    std::filesystem::path tempDataPath = tempDir / "Steam";
+    std::filesystem::path tempModPath = tempDir / "Mods";
+    std::filesystem::path tempProfilePath = tempDir / "PlayerProfiles";
+    
+    std::filesystem::path dataPath = std::filesystem::absolute(keyInfo["installDirPath"]);
+    std::filesystem::path modPath = std::filesystem::absolute(keyInfo["appDataPath"]) / "Mods";
+    std::filesystem::path profilePath = std::filesystem::absolute(keyInfo["appDataPath"]) / "PlayerProfiles";
+    
+
+    gameOverlay = std::make_unique<Lamp::Core::Base::FileSystemOverlay>(dataPath, 
+                                                                        workingDataPath, 
+                                                                        tempDataPath,
                                                                         true);
 
-    modOverlay = std::make_unique<Lamp::Core::Base::FileSystemOverlay>(steamModPath, 
-                                                                       workingSteamModPath,
+    modOverlay = std::make_unique<Lamp::Core::Base::FileSystemOverlay>(modPath, 
+                                                                       workingModPath,
+                                                                       tempModPath,
                                                                        true);
     
+    profileOverlay = std::make_unique<Lamp::Core::Base::FileSystemOverlay>(profilePath,
+                                                                           workingProfilePath,
+                                                                           tempProfilePath,
+                                                                           true);
 
     Core::Base::lampLog::getInstance().log("Copying ModProfile");
     Lamp::Core::lampControl::getInstance().deplopmentTracker = {3,4};

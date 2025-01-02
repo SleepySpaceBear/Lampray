@@ -77,17 +77,22 @@ namespace Lamp::Game {
         
         void unmount() override {
           if(modOverlay) {
-            modOverlay->remove();
+            modOverlay.reset();
           }
 
           if(gameOverlay) {
-            gameOverlay->remove();
+            gameOverlay.reset();
+          }
+
+          if(profileOverlay) {
+            profileOverlay.reset();
           }
         }
 
 	private:
         std::unique_ptr<Lamp::Core::Base::FileSystemOverlay> modOverlay;
         std::unique_ptr<Lamp::Core::Base::FileSystemOverlay> gameOverlay;
+        std::unique_ptr<Lamp::Core::Base::FileSystemOverlay> profileOverlay;
 
         enum ModType{
             BG3_ENGINE_INJECTION = 0,

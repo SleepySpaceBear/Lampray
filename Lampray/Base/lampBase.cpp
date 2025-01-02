@@ -21,15 +21,18 @@ bool Lamp::Core::Base::FileSystemOverlay::overlayExists() {
 
 Lamp::Core::Base::FileSystemOverlay::FileSystemOverlay(const std::filesystem::path& base, 
                                                        const std::filesystem::path& work,
+                                                       const std::filesystem::path& temp,
                                                        const bool buildOverlay = true) :
-  baseDir{std::filesystem::absolute(base)}, workDir{std::filesystem::absolute(work)} {
+  baseDir{std::filesystem::absolute(base)}, 
+  workDir{std::filesystem::absolute(work)},
+  tmpDir{std::filesystem::absolute(temp)} {
   
   managedDir = baseDir.parent_path() / (managed_prefix + baseDir.filename().stem().string());
   
-  tmpDir = workDir.parent_path() / ("work_" + workDir.filename().string());
   std::filesystem::create_directory(tmpDir);
   
   mountCommand = "pkexec mount -t overlay overlay ";
+  mountCommand += "-o index=off -o metacopy=off ";
   mountCommand += "-o lowerdir=\"" + managedDir.string() + "\"";
   mountCommand += ",upperdir=\"" + workDir.string() + "\"";
   mountCommand += ",workdir=\"" + tmpDir.string() + "\"";
@@ -56,7 +59,7 @@ bool Lamp::Core::Base::FileSystemOverlay::build() {
   }
   
   // folder has not been moved to the managed directory
-  if(!std::filesystem::is_empty(baseDir) || !std::filesystem::exists(managedDir)) {
+  if(!std::filesystem::exists(managedDir)) {
     moveDirectory(baseDir, managedDir);
     std::filesystem::create_directory(baseDir);
   }

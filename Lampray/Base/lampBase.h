@@ -825,6 +825,7 @@ namespace Lamp::Core::Base{
     public:
       FileSystemOverlay(const std::filesystem::path& base, 
                         const std::filesystem::path& work,
+                        const std::filesystem::path& temp,
                         const bool buildOverlay);
       ~FileSystemOverlay();
 
