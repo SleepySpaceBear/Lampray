@@ -806,65 +806,31 @@ namespace Lamp::Core::Base{
         }
     };
 
-    class OverlayBuilder{
-        std::vector<std::string> lowerPaths;
-        std::string configPath;
-        std::string gameTargetPath;
+    class FileSystemOverlay{
+    private:
+        static const char * managed_prefix;
+        std::filesystem::path workDir;
+        std::filesystem::path baseDir;
+        std::filesystem::path managedDir;
+        std::filesystem::path tmpDir;
 
-        std::string removeCommand;
-        std::string buildCommand;
+        std::string mountCommand;
+        std::string unmountCommand;
+        std::string cleanDirsCommand;
+        
+
+        bool isActive = false;
+        
+        bool overlayExists();
     public:
-        lampTypes::lampReturn addPath(std::string path){
-            std::filesystem::path p(path);
-            if(std::filesystem::is_directory(p)){
-                lowerPaths.push_back(p);
-                return{1, "Added path."};
-            }else{
-                return{0, "Path is not a valid directory"};
-            }
+      FileSystemOverlay(const std::filesystem::path& base, 
+                        const std::filesystem::path& work,
+                        const std::filesystem::path& temp,
+                        const bool buildOverlay);
+      ~FileSystemOverlay();
 
-        }
-
-        lampTypes::lampReturn create(std::string gameTarget, std::string configTarget, std::string workingTarget){
-                std::filesystem::path gamePath(gameTarget);
-                std::filesystem::path configPath(configTarget);
-                if(std::filesystem::exists(workingTarget) && std::filesystem::is_directory(workingTarget) && std::filesystem::exists(gamePath) && std::filesystem::is_directory(gamePath) && std::filesystem::exists(configPath) && std::filesystem::is_directory(configPath) ){
-                    // Rename the games folder and store a copy of the original name to be used for the merge.
-                    std::string managedString = std::string("Lampray Managed - ") + gamePath.filename().string();
-                    std::filesystem::path MergedPath = gamePath.parent_path() / managedString;
-                    std::filesystem::rename(gamePath, MergedPath);
-                    std::filesystem::create_directories(gamePath);
-
-                    // Build the command
-                    std::string command;
-                    command+= "pkexec mount -t overlay overlay -o ";
-                    command+= "lowerdir=\""+MergedPath.string()+":";
-                    // build the lowerdir
-                    if(!lowerPaths.empty()){
-                        command += lowerPaths[0];
-                        for(size_t i = 1; i < lowerPaths.size(); i++){
-                            command+=":"+lowerPaths[i];
-                        }
-                    }else{
-                        return{0, "No mod paths have been added."};
-                    }
-                    command+="\",upperdir=\""+configTarget;
-                    command+="\",workdir=\""+workingTarget;
-                    command+="\" \""+gameTarget+"\"";
-                   // return {1, command};
-                    // Execute it
-
-                    int result = system(command.c_str());
-                    if(result == 0){
-                        return {1, "Command successfully executed"};
-                    }else{
-                        return {0, "Command aborted"};
-                    }
-                }else{
-                    return{0, "Unable to create overlay, Targets Invalid."};
-                }
-        }
-
+      bool build();
+      bool remove();
     };
 }
 #endif //LAMP_LAMPBASE_H

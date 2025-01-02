@@ -1,10 +1,8 @@
 cmake_minimum_required(VERSION 3.26)
 project(Lampray)
+add_subdirectory(${CMAKE_SOURCE_DIR}/third-party/bit7z)
 
 set(CMAKE_CXX_STANDARD 17)
-
-
-
 
 add_executable(Lampray main.cpp
         third-party/imgui/imconfig.h
@@ -22,8 +20,8 @@ add_executable(Lampray main.cpp
         game-data/gameControl.h
         third-party/l4z/lz4.c
         third-party/l4z/lz4.h
-        VERSION
         Lampray/Base/lampBase.h
+        Lampray/Base/lampBase.cpp
         Lampray/Filesystem/lampFS.h
         Lampray/Control/lampControl.h
         Lampray/Control/lampControl.cpp
@@ -51,38 +49,29 @@ add_executable(Lampray main.cpp
 )
 
 
-
-
 find_package(PkgConfig REQUIRED)
 
-target_link_libraries(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/third-party/bit7z/lib/x64/libbit7z64.a )
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/third-party/bit7z/include/include/bit7z )
+target_link_libraries(${PROJECT_NAME} PUBLIC bit7z64)
 
-target_link_libraries(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/third-party/nfd/lib/libnfd.a )
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/third-party/nfd/include/include/nfd.h )
-
+target_link_libraries(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/third-party/nfd/lib/libnfd.a )
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/third-party/nfd/include/include/nfd.h)
 
 # Find the SDL2 package
 find_package(SDL2 REQUIRED)
 
 # Include SDL2 headers
 include_directories(${SDL2_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL2_LIBRARIES})
 
-#add_subdirectory(third-party/SDL2)
-#target_link_libraries(${PROJECT_NAME} SDL)
-
-#find_package(pugixml REQUIRED)
-#target_link_libraries(${PROJECT_NAME} pugixml::pugixml)
 
 add_subdirectory(third-party/pugixml)
-target_link_libraries(${PROJECT_NAME} pugixml::pugixml)
+target_link_libraries(${PROJECT_NAME} PUBLIC pugixml::pugixml)
 
 find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${CURL_LIBRARIES})
 
 
-target_link_libraries(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/third-party/l4z/liblz4.so)
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/third-party/l4z/)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/third-party/l4z/liblz4.so)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/third-party/l4z/)
 

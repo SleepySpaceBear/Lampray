@@ -4,10 +4,10 @@
 
 #include <regex>
 #include "lampFS.h"
-#include "bit7zlibrary.hpp"
+#include "bit7z/bit7zlibrary.hpp"
 #include "../Control/lampGames.h"
-#include "bitarchivereader.hpp"
-#include "bitexception.hpp"
+#include "bit7z/bitarchivereader.hpp"
+#include "bit7z/bitexception.hpp"
 
 Lamp::Core::FS::lampReturn Lamp::Core::FS::lampExtract::extract(const Base::lampMod::Mod *mod) {
     if(!mod->enabled) return false;
@@ -20,7 +20,7 @@ Lamp::Core::FS::lampReturn Lamp::Core::FS::lampExtract::extract(const Base::lamp
             bit7z::Bit7zLibrary lib{Lamp::Core::lampConfig::getInstance().bit7zLibraryLocation};
             bit7z::BitArchiveReader reader{lib, mod->ArchivePath, bit7z::BitFormat::Zip};
             reader.test();
-            reader.extract(workingDir + "/ext/" + std::filesystem::path(mod->ArchivePath).filename().stem().string());
+            reader.extractTo(workingDir + "/ext/" + std::filesystem::path(mod->ArchivePath).filename().stem().string());
             return Base::lampLog::getInstance().pLog({1, "Extraction Successful. : "+ mod->ArchivePath},  Base::lampLog::LOG);
         } catch (const bit7z::BitException &ex) {
             return Base::lampLog::getInstance().pLog({0, "Could not extract file : "+ mod->ArchivePath},  Base::lampLog::ERROR,
@@ -31,14 +31,14 @@ Lamp::Core::FS::lampReturn Lamp::Core::FS::lampExtract::extract(const Base::lamp
             bit7z::Bit7zLibrary lib{Lamp::Core::lampConfig::getInstance().bit7zLibraryLocation};
             bit7z::BitArchiveReader reader{lib, mod->ArchivePath, bit7z::BitFormat::Rar5};
             reader.test();
-            reader.extract(workingDir + "/ext/" + std::filesystem::path(mod->ArchivePath).filename().stem().string());
+            reader.extractTo(workingDir + "/ext/" + std::filesystem::path(mod->ArchivePath).filename().stem().string());
             return Base::lampLog::getInstance().pLog({1, "Extraction Successful. : "+ mod->ArchivePath},  Base::lampLog::LOG);
         } catch (const bit7z::BitException &ex) {
             try {
                 bit7z::Bit7zLibrary lib{Lamp::Core::lampConfig::getInstance().bit7zLibraryLocation};
                 bit7z::BitArchiveReader reader{lib, mod->ArchivePath, bit7z::BitFormat::Rar};
                 reader.test();
-                reader.extract(workingDir + "/ext/" + std::filesystem::path(mod->ArchivePath).filename().stem().string());
+                reader.extractTo(workingDir + "/ext/" + std::filesystem::path(mod->ArchivePath).filename().stem().string());
                 return Base::lampLog::getInstance().pLog({1, "Extraction Successful. : "+ mod->ArchivePath},  Base::lampLog::LOG);
             } catch (const bit7z::BitException &ex2) {
                 return Base::lampLog::getInstance().pLog({0, "Could not extract file : "+ mod->ArchivePath + "\nMessages:\n" + ex.what() + "\n" + ex2.what()},
@@ -50,7 +50,7 @@ Lamp::Core::FS::lampReturn Lamp::Core::FS::lampExtract::extract(const Base::lamp
             bit7z::Bit7zLibrary lib{Lamp::Core::lampConfig::getInstance().bit7zLibraryLocation};
             bit7z::BitArchiveReader reader{lib, mod->ArchivePath, bit7z::BitFormat::SevenZip};
             reader.test();
-            reader.extract(workingDir + "/ext/" + std::filesystem::path(mod->ArchivePath).filename().stem().string());
+            reader.extractTo(workingDir + "/ext/" + std::filesystem::path(mod->ArchivePath).filename().stem().string());
             return Base::lampLog::getInstance().pLog({1, "Extraction Successful. : "+ mod->ArchivePath},  Base::lampLog::LOG);
         } catch (const bit7z::BitException &ex) {
             return Base::lampLog::getInstance().pLog({0, "Could not extract file : "+ mod->ArchivePath},  Base::lampLog::ERROR,
@@ -68,7 +68,7 @@ Lamp::Core::lampReturn Lamp::Core::FS::lampExtract::moveModSpecificFileType(cons
                                                                             Lamp::Core::lampString localExtractionPath) {
     std::string workingDir = Lamp::Core::lampConfig::getInstance().DeploymentDataPath +
                              Lamp::Games::getInstance().currentGame->Ident().ReadableName;
-    for (const auto& entry : fs::recursive_directory_iterator(workingDir + "/ext/" + std::filesystem::path(mod->ArchivePath).filename().stem().string())) {
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(workingDir + "/ext/" + std::filesystem::path(mod->ArchivePath).filename().stem().string())) {
         copyFilesWithExtension(
                 workingDir + "/ext/" + std::filesystem::path(mod->ArchivePath).filename().stem().string(),
                 workingDir + "/" + localExtractionPath, extension);
@@ -101,16 +101,16 @@ Lamp::Core::FS::lampExtract::copyFile(const std::filesystem::path &source, const
 
 Lamp::Core::lampReturn Lamp::Core::FS::lampExtract::copyDirectoryRecursively(const std::filesystem::path &source,
                                                            const std::filesystem::path &destination) {
-    for (const auto& entry : fs::directory_iterator(source)) {
-        fs::path destinationEntry = destination / entry.path().filename();
+    for (const auto& entry : std::filesystem::directory_iterator(source)) {
+        std::filesystem::path destinationEntry = destination / entry.path().filename();
 
-        if (fs::is_directory(entry)) {
-            fs::create_directories(destinationEntry);
+        if (std::filesystem::is_directory(entry)) {
+            std::filesystem::create_directories(destinationEntry);
             lampReturn result = copyDirectoryRecursively(entry, destinationEntry);
             if (!result) {
                 return result; // Propagate the error if copying failed
             }
-        } else if (fs::is_regular_file(entry)) {
+        } else if (std::filesystem::is_regular_file(entry)) {
             lampReturn result = copyFile(entry.path(), destinationEntry);
             if (!result) {
                 return result; // Propagate the error if copying failed
@@ -125,8 +125,8 @@ Lamp::Core::lampReturn Lamp::Core::FS::lampExtract::copyDirectoryRecursively(con
 Lamp::Core::lampReturn Lamp::Core::FS::lampExtract::caseInsensitiveFolderCopyRecursive(const std::filesystem::path &sourceDirectory,
                                                                      const std::filesystem::path &destinationDirectory,
                                                                      const std::string &targetDirectoryName) {
-    for (const auto& entry : fs::recursive_directory_iterator(sourceDirectory)) {
-        if (fs::is_directory(entry) &&
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(sourceDirectory)) {
+        if (std::filesystem::is_directory(entry) &&
             caseInsensitiveStringCompare(entry.path().filename().string(), targetDirectoryName)) {
             lampReturn result = copyDirectoryRecursively(entry, destinationDirectory);
             if (!result) {
@@ -142,11 +142,11 @@ Lamp::Core::lampReturn Lamp::Core::FS::lampExtract::caseInsensitiveFolderCopyRec
 Lamp::Core::lampReturn Lamp::Core::FS::lampExtract::copyFilesWithExtension(const std::filesystem::path &sourceDirectory,
                                                          const std::filesystem::path &destinationDirectory,
                                                          const std::string &extension) {
-    for (const auto& entry : fs::recursive_directory_iterator(sourceDirectory)) {
-        if (fs::is_regular_file(entry)) {
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(sourceDirectory)) {
+        if (std::filesystem::is_regular_file(entry)) {
             std::string fileExtension = entry.path().extension().string();
             if (!fileExtension.empty() && caseInsensitiveStringCompare(fileExtension.substr(1), extension)) {
-                fs::path destinationFile = destinationDirectory / entry.path().filename();
+                std::filesystem::path destinationFile = destinationDirectory / entry.path().filename();
                 lampReturn result = copyFile(entry.path(), destinationFile);
                 if (!result) {
                     return result; // Propagate the error if copying failed
